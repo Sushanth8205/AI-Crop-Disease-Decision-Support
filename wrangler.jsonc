@@ -1,7 +1,9 @@
-
 {
+  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "ai-crop-disease-decision-support",
   "main": "worker.py",
   "compatibility_date": "2026-10-12",
-  "compatibility_flags": ["python_workers"]
+  "compatibility_flags": [
+    "python_workers"
+  ]
 }
