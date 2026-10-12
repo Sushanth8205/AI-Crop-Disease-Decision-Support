@@ -83,3 +83,12 @@ $RECYCLE.BIN/
 *.sqlite
 *.sqlite3
 *.db
+
+# ==========================================
+# Project Documentation & Research Papers
+# ==========================================
+*.docx
+*.pdf
+IEEE_Crop_Disease_Research_Paper*
+ML_Based_Crop_Disease_Detection_SRS*
+
