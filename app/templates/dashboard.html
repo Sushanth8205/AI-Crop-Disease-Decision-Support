@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if role == 'user' %}
+<!-- ═══════════════ FARMER DASHBOARD ═══════════════ -->
+
+<!-- HOME TAB -->
+<div class="tab-content {% if active_tab == 'home' %}active{% endif %}" id="tab-home">
+    <h2 style="margin-bottom:1.5rem; color:var(--primary-dark);">Good day, {{ user.name }} 👋</h2>
+
+    <!-- Stat Cards -->
+    <div class="stat-cards">
+        <div class="stat-card">
+            <div class="stat-num">{{ history|length }}</div>
+            <div class="stat-label">Detections</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#388e3c,#66bb6a)">
+            <div class="stat-num">{{ appointments|length }}</div>
+            <div class="stat-label">Appointments</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#f57f17,#ffa726)">
+            <div class="stat-num">{{ history|selectattr('disease','ne','healthy')|list|length }}</div>
+            <div class="stat-label">Diseases Found</div>
+        </div>
+    </div>
+
+    <!-- Quick Action Cards -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1.2rem;">
+        <div class="glass-panel" style="text-align:center;">
+            <div style="font-size:3rem;margin-bottom:1rem;">🔬</div>
+            <h3 style="margin-bottom:0.5rem;">Disease Detection</h3>
+            <p style="color:#666;font-size:0.9rem;margin:0.8rem 0 1.2rem;">Upload a crop leaf image for instant AI diagnosis.</p>
+            <a href="{{ url_for('detection.detect') }}" class="btn btn-primary btn-block">Analyze Now</a>
+        </div>
+        <div class="glass-panel" style="text-align:center;">
+            <div style="font-size:3rem;margin-bottom:1rem;">👨‍🌾</div>
+            <h3 style="margin-bottom:0.5rem;">Find Advisors</h3>
+            <p style="color:#666;font-size:0.9rem;margin:0.8rem 0 1.2rem;">Connect with agricultural experts for guidance.</p>
+            <a href="{{ url_for('advisor.list_advisors') }}" class="btn btn-outline btn-block">Browse Advisors</a>
+        </div>
+    </div>
+
+    <!-- Recent Detections preview -->
+    {% if history %}
+    <div class="glass-panel" style="margin-top:1.5rem;">
+        <h3 style="margin-bottom:1rem;">Recent Detections</h3>
+        <div style="display:flex;flex-direction:column;gap:0.8rem;">
+            {% for item in history[:3] %}
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:0.8rem 1rem;background:rgba(255,255,255,0.5);border-radius:10px;">
+                <div>
+                    <strong>{{ item.crop }}</strong> — 
+                    <span style="color:{{ '#b91c1c' if item.disease.lower() != 'healthy' else '#15803d' }}">{{ item.disease }}</span>
+                    <div style="font-size:0.8rem;color:#888;margin-top:0.2rem;">{{ item.timestamp.strftime('%d %b %Y') }}</div>
+                </div>
+                <a href="{{ url_for('detection.result', detection_id=item._id) }}" class="btn btn-outline" style="padding:0.4rem 0.9rem;font-size:0.85rem;">View</a>
+            </div>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('main.dashboard') }}?tab=history" style="display:block;text-align:center;margin-top:1rem;color:var(--primary);font-weight:500;text-decoration:none;">View all history →</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- HISTORY TAB -->
+<div class="tab-content {% if active_tab == 'history' %}active{% endif %}" id="tab-history">
+    <h2 style="margin-bottom:1.5rem; color:var(--primary-dark);">Detection History</h2>
+    {% if history %}
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+        {% for item in history %}
+        <div class="glass-panel" style="display:flex;justify-content:space-between;align-items:center;padding:1.2rem 1.5rem;flex-wrap:wrap;gap:1rem;">
+            <div>
+                <strong style="font-size:1.05rem;">{{ item.crop }}</strong>
+                <span style="color:{{ '#b91c1c' if item.disease.lower() != 'healthy' else '#15803d' }};margin-left:0.5rem;">{{ item.disease }}</span>
+                <div style="font-size:0.85rem;color:#888;margin-top:0.3rem;">{{ item.timestamp.strftime('%d %b %Y, %H:%M') }} &nbsp;|&nbsp; Confidence: {{ item.confidence }}%</div>
+            </div>
+            <a href="{{ url_for('detection.result', detection_id=item._id) }}" class="btn btn-outline" style="white-space:nowrap;">View Report</a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="glass-panel" style="text-align:center;padding:3rem;">
+        <div style="font-size:3rem;margin-bottom:1rem;">🌿</div>
+        <p style="color:#666;">No detections yet. Start by analyzing a crop leaf!</p>
+        <a href="{{ url_for('detection.detect') }}" class="btn btn-primary" style="margin-top:1.2rem;">Detect Now</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- PROFILE TAB -->
+<div class="tab-content {% if active_tab == 'profile' %}active{% endif %}" id="tab-profile">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; color: var(--primary-dark);">My Profile</h2>
+        <a href="{{ url_for('main.update_profile') }}" class="btn btn-outline" style="padding: 0.5rem 1rem;">✏️ Edit Profile</a>
+    </div>
+    <div class="glass-panel" style="margin-bottom:1.5rem;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div><label style="font-size:0.8rem;color:#888;">Full Name</label><p style="font-weight:600;">{{ user.name }}</p></div>
+            <div><label style="font-size:0.8rem;color:#888;">Email</label><p>{{ user.email }}</p></div>
+            <div><label style="font-size:0.8rem;color:#888;">Phone</label><p>{{ user.phone }}</p></div>
+            <div><label style="font-size:0.8rem;color:#888;">Preferred Language</label><p>{{ user.preferred_language }}</p></div>
+            <div><label style="font-size:0.8rem;color:#888;">Location</label><p>{{ user.location }}, {{ user.district }}, {{ user.state }}</p></div>
+        </div>
+    </div>
+
+    <div class="glass-panel">
+        <h3 style="margin-bottom:0.5rem;">📍 My Location</h3>
+        <p style="color:#666;font-size:0.9rem;">Showing your location on the map based on browser geolocation.</p>
+        <div id="profile-map" class="map-container" style="height: 480px; min-height: 480px;"></div>
+    </div>
+</div>
+
+{% else %}
+<!-- ═══════════════ ADVISOR DASHBOARD ═══════════════ -->
+
+<!-- HOME TAB -->
+<div class="tab-content {% if active_tab == 'home' %}active{% endif %}" id="tab-home">
+    <h2 style="margin-bottom:1.5rem; color:var(--primary-dark);">Welcome, {{ user.name }} 👋</h2>
+
+    <div class="stat-cards">
+        <div class="stat-card">
+            <div class="stat-num">{{ appointments|length }}</div>
+            <div class="stat-label">Appointments</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#0277bd,#42a5f5)">
+            <div class="stat-num">{{ appointments|selectattr('report_path')|list|length }}</div>
+            <div class="stat-label">Reports Received</div>
+        </div>
+    </div>
+
+    <div class="glass-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+            <div>
+                <h3>Your Expertise</h3>
+                <p style="color:#666;margin-top:0.3rem;">{{ user.crop_specialization }} | {{ user.disease_specialization }}</p>
+                <p style="color:#666;font-size:0.9rem;">{{ user.experience }} yrs experience · {{ user.qualification }}</p>
+            </div>
+            <span style="padding:0.5rem 1.2rem;background:#dcfce7;color:#15803d;border-radius:20px;font-weight:600;">🟢 Active</span>
+        </div>
+    </div>
+
+    {% if appointments %}
+    <div class="glass-panel" style="margin-top:1.5rem;">
+        <h3 style="margin-bottom:1rem;">Upcoming Appointments</h3>
+        {% for appt in appointments[:3] %}
+        <div style="padding:1rem;background:rgba(255,255,255,0.5);border-radius:10px;border-left:4px solid var(--primary);margin-bottom:0.8rem;">
+            <strong>{{ appt.farmer_name }}</strong> &nbsp;·&nbsp;
+            <span style="color:#555;">{{ appt.date }} @ {{ appt.time_slot }}</span>
+        </div>
+        {% endfor %}
+        <a href="{{ url_for('main.dashboard') }}?tab=appointments" style="display:block;text-align:center;margin-top:0.8rem;color:var(--primary);font-weight:500;text-decoration:none;">View all →</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- APPOINTMENTS TAB -->
+<div class="tab-content {% if active_tab == 'appointments' %}active{% endif %}" id="tab-appointments">
+    <h2 style="margin-bottom:1.5rem; color:var(--primary-dark);">Scheduled Appointments</h2>
+    {% if appointments %}
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+        {% for appt in appointments %}
+        <div class="glass-panel" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;padding:1.2rem 1.5rem;border-left:4px solid var(--primary);">
+            <div>
+                <h4 style="color:var(--primary-dark);">{{ appt.farmer_name }}</h4>
+                <p style="color:#555;margin-top:0.3rem;"><strong>Date:</strong> {{ appt.date }} &nbsp;·&nbsp; <strong>Time:</strong> {{ appt.time_slot }}</p>
+                <span style="display:inline-block;padding:0.2rem 0.6rem;background:var(--primary);color:white;border-radius:6px;font-size:0.8rem;margin-top:0.4rem;">{{ appt.status|capitalize }}</span>
+            </div>
+            <div>
+                {% if appt.report_path %}
+                <a href="{{ url_for('static', filename=appt.report_path) }}" target="_blank" class="btn btn-outline" style="font-size:0.9rem;">📄 View Report</a>
+                {% else %}
+                <span style="color:#999;font-size:0.9rem;">No report attached</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="glass-panel" style="text-align:center;padding:3rem;">
+        <div style="font-size:3rem;margin-bottom:1rem;">📅</div>
+        <p style="color:#666;">No upcoming appointments.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- PROFILE TAB (Advisor) -->
+<div class="tab-content {% if active_tab == 'profile' %}active{% endif %}" id="tab-profile">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; color: var(--primary-dark);">My Profile</h2>
+        <a href="{{ url_for('main.update_profile') }}" class="btn btn-outline" style="padding: 0.5rem 1rem;">✏️ Edit Profile</a>
+    </div>
+    <div class="glass-panel" style="margin-bottom:1.5rem;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div><label style="font-size:0.8rem;color:#888;">Full Name</label><p style="font-weight:600;">{{ user.name }}</p></div>
+            <div><label style="font-size:0.8rem;color:#888;">Email</label><p>{{ user.email }}</p></div>
+            <div><label style="font-size:0.8rem;color:#888;">Experience</label><p>{{ user.experience }} years</p></div>
+            <div><label style="font-size:0.8rem;color:#888;">Qualification</label><p>{{ user.qualification }}</p></div>
+            <div><label style="font-size:0.8rem;color:#888;">Crop Specialization</label><p>{{ user.crop_specialization }}</p></div>
+            <div><label style="font-size:0.8rem;color:#888;">Location</label><p>{{ user.district }}, {{ user.state }}</p></div>
+        </div>
+    </div>
+    <div class="glass-panel">
+        <h3 style="margin-bottom:0.5rem;">📍 My Practice Location</h3>
+        <p style="color:#666;font-size:0.9rem;">Your location is shown below based on browser geolocation.</p>
+        <div id="profile-map" class="map-container" style="height: 480px; min-height: 480px;"></div>
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialise Leaflet map on profile tab
+    function initProfileMap() {
+        const mapEl = document.getElementById('profile-map');
+        if (!mapEl) return;
+
+        const map = L.map('profile-map').setView([20.5937, 78.9629], 5); // Default: India
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        setTimeout(() => { map.invalidateSize(); }, 200);
+
+        const myLat = {{ user.lat if user.lat else 'null' }};
+        const myLng = {{ user.lng if user.lng else 'null' }};
+
+        const greenPlusIcon = L.divIcon({
+            className: '',
+            html: '<div style="background:#22c55e;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:16px;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);">+</div>',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+        });
+
+        const blueLocationIcon = L.divIcon({
+            className: '',
+            html: '<div style="background:#3b82f6;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+        });
+
+        const myIcon = "{{ role }}" === "advisor" ? greenPlusIcon : blueLocationIcon;
+
+        if (myLat && myLng) {
+            map.setView([myLat, myLng], 11);
+            L.marker([myLat, myLng], { icon: myIcon })
+                .addTo(map)
+                .bindPopup('<b>📍 Your Saved Location</b><br>{{ user.district }}, {{ user.state }}')
+                .openPopup();
+        } else if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                map.setView([lat, lng], 11);
+                L.marker([lat, lng], { icon: myIcon })
+                    .addTo(map)
+                    .bindPopup('<b>📍 Your Location (Browser)</b>')
+                    .openPopup();
+            });
+        }
+
+        // Display farmer locations on advisor's map
+        {# {% if role == 'advisor' and appointments %}
+        const farmerLocations = [
+            {% for appt in appointments %}
+            { 
+                name: "{{ appt.farmer_name }}", 
+                location: "{{ appt.farmer_location }}",
+                lat: {{ appt.farmer_lat if appt.farmer_lat else 'null' }},
+                lng: {{ appt.farmer_lng if appt.farmer_lng else 'null' }}
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        farmerLocations.forEach(async (farmer) => {
+            if (farmer.lat && farmer.lng) {
+                L.marker([farmer.lat, farmer.lng], { icon: blueLocationIcon })
+                    .addTo(map)
+                    .bindPopup(`<b>👨‍🌾 ${farmer.name}</b><br>${farmer.location}`);
+            } else if (farmer.location) {
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(farmer.location)}`);
+                    const data = await response.json();
+                    if (data && data.length > 0) {
+                        L.marker([data[0].lat, data[0].lon], { icon: blueLocationIcon })
+                            .addTo(map)
+                            .bindPopup(`<b>👨‍🌾 ${farmer.name}</b><br>${farmer.location}`);
+                    }
+                } catch (e) {}
+            }
+        });
+        {% endif %} #}
+    }
+
+    // Run when profile tab is active
+    const activeTab = "{{ active_tab }}";
+    if (activeTab === 'profile') {
+        initProfileMap();
+    }
+
+    // Also init map if user manually clicks profile (no full reload needed since links change URL)
+    document.querySelectorAll('.nav-item').forEach(link => {
+        link.addEventListener('click', function() {
+            if (this.href && this.href.includes('tab=profile')) {
+                setTimeout(initProfileMap, 200);
+            }
+        });
+    });
+</script>
+{% endblock %}

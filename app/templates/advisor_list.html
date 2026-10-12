@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="width: 100%; max-width: 1000px;">
+    <h2 style="margin-bottom:1.5rem; color:var(--primary-dark);">Find Agricultural Advisors</h2>
+
+    <!-- Search Bar -->
+    <div class="glass-panel" style="margin-bottom:1.5rem;">
+        <form method="GET" action="{{ url_for('advisor.list_advisors') }}" style="display:flex; gap:0.8rem; flex-wrap:wrap;">
+            <input type="text" name="search" placeholder="Search by crop, disease, or district..." value="{{ search_query }}"
+                   style="flex:1; min-width:200px; padding:0.8rem 1rem; border-radius:10px; border:1.5px solid #ddd; font-size:0.95rem; background:rgba(255,255,255,0.9);">
+            <button type="submit" class="btn btn-primary">🔍 Search</button>
+            {% if search_query %}
+            <a href="{{ url_for('advisor.list_advisors') }}" class="btn btn-outline">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Map showing advisor locations -->
+    <div class="glass-panel" style="margin-bottom:1.5rem;">
+        <h3 style="margin-bottom:0.5rem;">📍 Advisors Near You</h3>
+        <p style="color:#666; font-size:0.85rem; margin-bottom:0.5rem;">Allow location access to see advisors on the map.</p>
+        <div id="advisor-map" class="map-container"></div>
+    </div>
+
+    <!-- Advisor Cards -->
+    {% if advisors %}
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1.2rem;">
+        {% for advisor in advisors %}
+        <div class="glass-panel" style="display:flex; flex-direction:column; gap:0.8rem; transition:transform 0.25s ease; cursor:pointer;"
+             onmouseover="this.style.transform='translateY(-4px)'"
+             onmouseout="this.style.transform='translateY(0)'">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                    <h3 style="color:var(--primary-dark); margin-bottom:0.2rem;">{{ advisor.name }}</h3>
+                    <p style="font-size:0.85rem; color:#888;">📍 {{ advisor.district }}, {{ advisor.state }}</p>
+                </div>
+                <span style="background:#dcfce7; color:#15803d; padding:0.2rem 0.6rem; border-radius:20px; font-size:0.78rem; font-weight:600; white-space:nowrap;">🟢 Active</span>
+            </div>
+            <div style="font-size:0.9rem; display:flex; flex-direction:column; gap:0.3rem; color:#555;">
+                <p><strong>Experience:</strong> {{ advisor.experience }} years</p>
+                <p><strong>Qualification:</strong> {{ advisor.qualification }}</p>
+                <p><strong>Crops:</strong> {{ advisor.crop_specialization }}</p>
+                <p><strong>Available:</strong> {{ advisor.available_days }}</p>
+            </div>
+            <a href="{{ url_for('advisor.book', advisor_id=advisor._id) }}" class="btn btn-primary btn-block" style="margin-top:auto;">
+                📅 Book Appointment
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="glass-panel" style="text-align:center; padding:3rem;">
+        <div style="font-size:3rem; margin-bottom:1rem;">🔎</div>
+        <p style="color:#666;">No advisors found matching your criteria.</p>
+        <a href="{{ url_for('advisor.list_advisors') }}" class="btn btn-outline" style="margin-top:1rem;">Clear Search</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const advisorMap = L.map('advisor-map').setView([20.5937, 78.9629], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+    }).addTo(advisorMap);
+
+    const myLat = {{ user.lat if user.lat else 'null' }};
+    const myLng = {{ user.lng if user.lng else 'null' }};
+
+    const greenPlusIcon = L.divIcon({
+        className: '',
+        html: '<div style="background:#22c55e;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:16px;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);">+</div>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+    });
+
+    const blueLocationIcon = L.divIcon({
+        className: '',
+        html: '<div style="background:#3b82f6;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+    });
+
+    if (myLat && myLng) {
+        advisorMap.setView([myLat, myLng], 11);
+        L.marker([myLat, myLng], { icon: blueLocationIcon })
+         .addTo(advisorMap)
+         .bindPopup('<b>📍 Your Saved Location</b>');
+    } else if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            advisorMap.setView([lat, lng], 11);
+            L.marker([lat, lng], { icon: blueLocationIcon })
+             .addTo(advisorMap)
+             .bindPopup('<b>📍 Your Location (Browser)</b>');
+        });
+    }
+
+    // Advisor locations
+    {% if advisors %}
+    const advisorsData = [
+        {% for advisor in advisors %}
+        { 
+            name: "{{ advisor.name }}", 
+            location: "{{ advisor.district }}, {{ advisor.state }}", 
+            id: "{{ advisor._id }}",
+            lat: {{ advisor.lat if advisor.lat else 'null' }},
+            lng: {{ advisor.lng if advisor.lng else 'null' }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    advisorsData.forEach(async (adv) => {
+        if (adv.lat && adv.lng) {
+            L.marker([adv.lat, adv.lng], { icon: greenPlusIcon })
+                .addTo(advisorMap)
+                .bindPopup(`<b>🧑‍🏫 ${adv.name}</b><br>${adv.location}<br><a href="/advisor/book/${adv.id}">Book Appointment</a>`);
+        } else if (adv.location && adv.location.trim() !== ',') {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(adv.location)}`);
+                const data = await response.json();
+                if (data && data.length > 0) {
+                    L.marker([data[0].lat, data[0].lon], { icon: greenPlusIcon })
+                        .addTo(advisorMap)
+                        .bindPopup(`<b>🧑‍🏫 ${adv.name}</b><br>${adv.location}<br><a href="/advisor/book/${adv.id}">Book Appointment</a>`);
+                }
+            } catch (e) {}
+        }
+    });
+    {% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-container glass-panel" style="max-width: 600px;">
+    <h2>Farmer Registration</h2>
+    <form method="POST" action="{{ url_for('auth.register_user') }}">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" name="name" required>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required>
+            </div>
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" name="phone" required>
+            </div>
+            <div class="form-group">
+                <label>State</label>
+                <input type="text" name="state" required>
+            </div>
+            <div class="form-group">
+                <label>District</label>
+                <input type="text" name="district" required>
+            </div>
+            <div class="form-group">
+                <label>Specific Location (Village/City)</label>
+                <input type="text" name="location" required>
+            </div>
+            <div class="form-group">
+                <label>Preferred Language</label>
+                <select name="preferred_language" required>
+                    <option value="English">English</option>
+                    <option value="Hindi">Hindi</option>
+                    <option value="Marathi">Marathi</option>
+                    <option value="Kannada">Kannada</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1; margin-top: 1rem;">
+            <label>📍 Select your exact location on the map</label>
+            <p style="font-size: 0.85rem; color: #666; margin-bottom: 0.5rem;">Click on the map to set your location pin. We'll automatically fill the text fields above.</p>
+            <div id="register-map" class="map-container" style="height: 300px; border-radius: 8px; border: 1px solid #ddd; z-index: 1;"></div>
+            <input type="hidden" name="lat" id="lat-input">
+            <input type="hidden" name="lng" id="lng-input">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1.5rem;" id="submit-btn">Register as Farmer</button>
+    </form>
+    <p class="auth-links">Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a></p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const map = L.map('register-map').setView([20.5937, 78.9629], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    let marker;
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+            map.setView([pos.coords.latitude, pos.coords.longitude], 10);
+        });
+    }
+
+    map.on('click', async function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+
+        if (marker) {
+            marker.setLatLng(e.latlng);
+        } else {
+            marker = L.marker(e.latlng).addTo(map);
+        }
+
+        document.getElementById('lat-input').value = lat;
+        document.getElementById('lng-input').value = lng;
+
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+            const data = await response.json();
+            
+            if (data && data.address) {
+                const address = data.address;
+                if (address.state) document.querySelector('input[name="state"]').value = address.state;
+                
+                const district = address.state_district || address.county || address.district;
+                if (district) document.querySelector('input[name="district"]').value = district.replace(/ District$/i, '');
+                
+                const loc = address.village || address.city || address.town || address.suburb;
+                if (loc) document.querySelector('input[name="location"]').value = loc;
+            }
+        } catch (error) {
+            console.error("Error reverse geocoding:", error);
+        }
+    });
+
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (!document.getElementById('lat-input').value) {
+            e.preventDefault();
+            alert("Please click on the map to set your precise location.");
+        }
+    });
+</script>
+{% endblock %}

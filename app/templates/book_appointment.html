@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="glass-panel" style="width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 2rem;">
+    <h2>Book Appointment with {{ advisor.name }}</h2>
+
+    <div
+        style="background: rgba(255,255,255,0.5); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--glass-border);">
+        <h3>Advisor Profile</h3>
+        <p><strong>Specializations:</strong> {{ advisor.crop_specialization }} | {{ advisor.disease_specialization }}
+        </p>
+        <p><strong>Available Days:</strong> {{ advisor.available_days }}</p>
+        <p><strong>Available Slots:</strong> {{ advisor.available_time_slots }}</p>
+        <hr style="margin: 1rem 0; border: 0; border-top: 1px solid #ddd;">
+        <p style="font-style: italic; color: #555;">"{{ advisor.profile_description }}"</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('advisor.book', advisor_id=advisor._id) }}"
+        style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group" style="margin:0;">
+                <label>Select Date</label>
+                <input type="date" name="date" required min="{{ current_date }}"
+                    style="width:100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ccc;">
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label>Select Time Slot</label>
+                <!-- In a real app, this would dynamically parse the advisor's available slots -->
+                <select name="time_slot" required
+                    style="width:100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ccc;">
+                    <option value="09:00 AM">09:00 AM</option>
+                    <option value="10:00 AM">10:00 AM</option>
+                    <option value="11:00 AM">11:00 AM</option>
+                    <option value="01:00 PM">01:00 PM</option>
+                    <option value="02:00 PM">02:00 PM</option>
+                    <option value="03:00 PM">03:00 PM</option>
+                    <option value="04:00 PM">04:00 PM</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin:0;">
+            <label>Attach PDF Report (Optional but recommended)</label>
+            <input type="file" name="report" accept="application/pdf"
+                style="width:100%; padding: 0.8rem; background: white; border-radius: 8px; border: 1px solid #ccc;">
+            <small style="color: #666; display: block; margin-top: 0.5rem;">Upload the diagnosis report generated from
+                the AI detection tool.</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-large" style="align-self: flex-start;">Confirm Booking</button>
+    </form>
+</div>
+{% endblock %}

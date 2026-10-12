@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="result-container" style="display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 1000px;">
+    
+    <!-- Image Section -->
+    <div class="glass-panel" style="flex: 1; min-width: 300px;">
+        <h3>Uploaded Image</h3>
+        <img src="{{ url_for('static', filename=detection.image_path) }}" alt="Crop Leaf" style="width: 100%; border-radius: 12px; margin-top: 1rem; border: 1px solid var(--glass-border);">
+    </div>
+
+    <!-- Analysis Section -->
+    <div class="glass-panel" style="flex: 2; min-width: 300px;">
+        <h2>Analysis Result</h2>
+        <div class="result-details" style="margin-top: 1.5rem;">
+            <p><strong>Crop Detected:</strong> <span class="highlight">{{ detection.crop }}</span></p>
+            
+            {% if detection.disease.lower() == 'healthy' %}
+                <div class="alert alert-success" style="margin: 1rem 0;">
+                    <strong>Status: Healthy!</strong> No disease detected.
+                </div>
+                <p>Your crop appears to be in good health. Keep up the good work!</p>
+            {% else %}
+                <p><strong>Disease Predicted:</strong> <span class="highlight-danger">{{ detection.disease }}</span></p>
+                <div class="confidence-bar" style="margin: 1rem 0;">
+                    <p style="margin-bottom: 0.5rem;">Confidence Score: {{ detection.confidence }}%</p>
+                    <div style="background: #e0e0e0; height: 10px; border-radius: 5px; width: 100%; overflow: hidden;">
+                        <div style="background: var(--primary); height: 100%; width: {{ detection.confidence }}%;"></div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="action-buttons" style="display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap;">
+            {% if detection.disease.lower() != 'healthy' %}
+                <a href="{{ url_for('report.generate_report', detection_id=detection._id) }}" class="btn btn-primary">Generate Report</a>
+                <a href="{{ url_for('ai.ask_ai', detection_id=detection._id) }}" class="btn btn-outline">Ask AI Assistant</a>
+                <a href="{{ url_for('advisor.list_advisors') }}" class="btn btn-outline">Find Advisor</a>
+            {% endif %}
+            <a href="{{ url_for('detection.detect') }}" class="btn btn-outline">Analyze Another Image</a>
+        </div>
+    </div>
+
+    <!-- Downside Visual Feature & Diagnostic Analysis Section -->
+    {% if plots %}
+    <div class="glass-panel" style="width: 100%; margin-top: 1rem; display: flex; flex-direction: column; gap: 2rem;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 0.8rem;">
+            <div>
+                <h3 style="margin: 0; color: var(--primary-dark);">📊 Visual Feature & Diagnostic Analysis</h3>
+                <p style="color: #666; font-size: 0.88rem; margin-top: 0.2rem;">Complete computer vision diagnostic profiling and historical analytics.</p>
+            </div>
+            <a href="{{ url_for('detection.download_csv', detection_id=detection._id) }}" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
+                📊 Download Features CSV
+            </a>
+        </div>
+
+        <!-- DIAGNOSTIC PLOT: Leaf Segmentation & Tissue Profile -->
+        {% if plots.diagnostic_b64 %}
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem;">
+                <h4 style="margin: 0; color: #1e293b;">🔬 Leaf Diagnostic & Tissue Segmentation Analysis</h4>
+                <a href="{{ url_for('detection.download_plot', detection_id=detection._id, plot_type='diagnostic') }}" class="btn btn-outline" style="font-size: 0.82rem; padding: 0.35rem 0.8rem;">
+                    📥 Download Diagnostic Plot (PNG)
+                </a>
+            </div>
+            <div style="text-align: center; border-radius: 10px; overflow: hidden; background: #ffffff; border: 1px solid var(--glass-border); padding: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <img src="{{ plots.diagnostic_b64 }}" alt="Leaf Diagnostic Feature Analysis" style="width: 100%; height: auto; border-radius: 6px; display: block;">
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- PLOT 1: Month-wise Disease Ratio -->
+        {% if plots.plot1_b64 %}
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem;">
+                <h4 style="margin: 0; color: #1e293b;">📈 Plot 1: Month-wise Disease Ratio</h4>
+                <a href="{{ url_for('detection.download_plot', detection_id=detection._id, plot_type='1') }}" class="btn btn-outline" style="font-size: 0.82rem; padding: 0.35rem 0.8rem;">
+                    📥 Download Plot 1 (PNG)
+                </a>
+            </div>
+            <div style="text-align: center; border-radius: 10px; overflow: hidden; background: #ffffff; border: 1px solid var(--glass-border); padding: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <img src="{{ plots.plot1_b64 }}" alt="Plot 1: Month-wise Disease Ratio" style="width: 100%; height: auto; border-radius: 6px; display: block;">
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- PLOT 2: Image Processing Results -->
+        {% if plots.plot2_b64 %}
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem;">
+                <h4 style="margin: 0; color: #1e293b;">📊 Plot 2: Image Processing Results (Normalized Features)</h4>
+                <a href="{{ url_for('detection.download_plot', detection_id=detection._id, plot_type='2') }}" class="btn btn-outline" style="font-size: 0.82rem; padding: 0.35rem 0.8rem;">
+                    📥 Download Plot 2 (PNG)
+                </a>
+            </div>
+            <div style="text-align: center; border-radius: 10px; overflow: hidden; background: #ffffff; border: 1px solid var(--glass-border); padding: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <img src="{{ plots.plot2_b64 }}" alt="Plot 2: Image Processing Results" style="width: 100%; height: auto; border-radius: 6px; display: block;">
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- PLOT 3: Crop × Disease Heatmap -->
+        {% if plots.plot3_b64 %}
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem;">
+                <h4 style="margin: 0; color: #1e293b;">🗺️ Plot 3: Crop × Disease Heatmap</h4>
+                <a href="{{ url_for('detection.download_plot', detection_id=detection._id, plot_type='3') }}" class="btn btn-outline" style="font-size: 0.82rem; padding: 0.35rem 0.8rem;">
+                    📥 Download Plot 3 (PNG)
+                </a>
+            </div>
+            <div style="text-align: center; border-radius: 10px; overflow: hidden; background: #ffffff; border: 1px solid var(--glass-border); padding: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <img src="{{ plots.plot3_b64 }}" alt="Plot 3: Crop Disease Heatmap" style="width: 100%; height: auto; border-radius: 6px; display: block;">
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Bottom Actions -->
+        <div style="display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap; justify-content: center; align-items: center;">
+            <a href="{{ url_for('detection.download_csv', detection_id=detection._id) }}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                📊 Download All Features Data (CSV)
+            </a>
+            <a href="{{ url_for('report.generate_report', detection_id=detection._id) }}" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                📄 Download PDF Report
+            </a>
+        </div>
+
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+    .highlight {
+        font-weight: bold;
+        color: var(--primary-dark);
+        font-size: 1.2rem;
+    }
+    .highlight-danger {
+        font-weight: bold;
+        color: #b91c1c;
+        font-size: 1.2rem;
+    }
+</style>
+{% endblock %}

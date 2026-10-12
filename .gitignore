@@ -1,0 +1,85 @@
+# ==========================================
+# Byte-compiled / optimized / DLL files
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ==========================================
+# Environments & Secrets
+# ==========================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+er.email
+*.email
+
+# ==========================================
+# Virtual Environments
+# ==========================================
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ==========================================
+# Uploads & Generated User Reports
+# ==========================================
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+feature_analysis_report.png
+app/static/feature_analysis_report.png
+
+# ==========================================
+# Datasets (Large files & image collections)
+# ==========================================
+knowledge_base/plantvillage dataset/
+knowledge_base/plantvillage*
+datasets/
+data/
+
+# ==========================================
+# Large Model Weights & Checkpoints (>100MB)
+# Note: GitHub hard blocks files larger than 100MB without Git LFS.
+# model_checkpoint.pth is ~487MB and must be ignored.
+# ==========================================
+app/ml/model_checkpoint.pth
+*.checkpoint.pth
+*.ckpt
+
+# Explicitly ensure these required models are tracked in Git:
+!app/ml/best_model.pth
+!app/ml/mobilenetv2_plant.pth
+!best_model.pth
+!mobilenetv2_plant.pth
+
+# ==========================================
+# IDEs and Code Editors
+# ==========================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# ==========================================
+# Operating System Files
+# ==========================================
+Thumbs.db
+Desktop.ini
+.DS_Store
+$RECYCLE.BIN/
+
+# ==========================================
+# Logs and Databases
+# ==========================================
+*.log
+*.sqlite
+*.sqlite3
+*.db

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="glass-panel" style="text-align: center; max-width: 700px; margin: 0 auto;">
+    <h2 style="color: var(--primary-dark);">Upload Crop Leaf Image</h2>
+    <p style="margin-bottom: 1rem; color: #555;">Upload a clear image of the crop leaf for disease detection using our deep learning model.</p>
+    
+    <!-- Leaf Upload Guidance Notice -->
+    <div style="margin: 0.5rem auto 1.5rem; padding: 0.75rem 1.2rem; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 10px; display: flex; align-items: center; gap: 0.75rem; text-align: left;">
+        <span style="font-size: 1.5rem;">🌿</span>
+        <div style="font-size: 0.88rem; color: #166534;">
+            <strong>Leaf Detection Filter Active:</strong> Please upload a clear photo of a <strong>crop or plant leaf</strong>. Personal photos (selfies/portraits) and non-plant objects will be automatically detected and rejected.
+        </div>
+    </div>
+    
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('detection.detect') }}">
+        <div class="upload-area" id="upload-area">
+            <input type="file" name="image" id="image-input" accept="image/png, image/jpeg" required hidden>
+            <label for="image-input" class="upload-label">
+                <div class="upload-icon">🍃</div>
+                <p style="font-weight: 500; font-size: 1.05rem;">Click to browse or drag and drop a leaf image here</p>
+                <span class="file-name" id="file-name">No file selected</span>
+            </label>
+        </div>
+        <div class="preview-container" style="display:none; margin: 1.5rem auto;">
+            <img id="image-preview" src="#" alt="Image Preview" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+        </div>
+        <button type="submit" class="btn btn-primary btn-large btn-block" style="margin-top: 1rem;">🔍 Detect Leaf Disease</button>
+    </form>
+</div>
+
+<script>
+    const imageInput = document.getElementById('image-input');
+    const fileName = document.getElementById('file-name');
+    const previewContainer = document.querySelector('.preview-container');
+    const imagePreview = document.getElementById('image-preview');
+
+    imageInput.addEventListener('change', function() {
+        if(this.files && this.files[0]) {
+            fileName.textContent = this.files[0].name;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                previewContainer.style.display = 'block';
+            }
+            reader.readAsDataURL(this.files[0]);
+        } else {
+            fileName.textContent = 'No file selected';
+            previewContainer.style.display = 'none';
+        }
+    });
+</script>
+
+<style>
+    .upload-area {
+        border: 2px dashed var(--primary);
+        border-radius: 12px;
+        padding: 3rem 2rem;
+        transition: background 0.3s;
+        background: rgba(255,255,255,0.5);
+    }
+    .upload-area:hover {
+        background: rgba(255,255,255,0.8);
+    }
+    .upload-label {
+        cursor: pointer;
+        display: block;
+    }
+    .upload-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    .file-name {
+        display: block;
+        margin-top: 1rem;
+        font-weight: bold;
+        color: var(--primary-dark);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-container glass-panel" style="max-width: 800px; margin: 2rem auto;">
+    <h2>Update Profile</h2>
+    <form method="POST" action="{{ url_for('main.update_profile') }}">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <!-- Common Fields -->
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" name="name" value="{{ user.name }}" required>
+            </div>
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" name="phone" value="{{ user.phone }}" required>
+            </div>
+            
+            {% if user.role == 'advisor' %}
+            <!-- Advisor Specific Fields -->
+            <div class="form-group">
+                <label>Experience (Years)</label>
+                <input type="number" name="experience" min="1" value="{{ user.experience }}" required>
+            </div>
+            <div class="form-group">
+                <label>Qualification</label>
+                <input type="text" name="qualification" value="{{ user.qualification }}" required>
+            </div>
+            <div class="form-group">
+                <label>Crop Specialization</label>
+                <input type="text" name="crop_specialization" value="{{ user.crop_specialization }}" required>
+            </div>
+            <div class="form-group">
+                <label>Disease Specialization</label>
+                <input type="text" name="disease_specialization" value="{{ user.disease_specialization }}" required>
+            </div>
+            <div class="form-group">
+                <label>Available Days</label>
+                <input type="text" name="available_days" value="{{ user.available_days }}" required>
+            </div>
+            <div class="form-group">
+                <label>Available Time Slots</label>
+                <input type="text" name="available_time_slots" value="{{ user.available_time_slots }}" required>
+            </div>
+            {% else %}
+            <!-- Farmer Specific Fields -->
+            <div class="form-group">
+                <label>Preferred Language</label>
+                <select name="preferred_language" required>
+                    <option value="English" {% if user.preferred_language == 'English' %}selected{% endif %}>English</option>
+                    <option value="Hindi" {% if user.preferred_language == 'Hindi' %}selected{% endif %}>Hindi</option>
+                    <option value="Marathi" {% if user.preferred_language == 'Marathi' %}selected{% endif %}>Marathi</option>
+                    <option value="Kannada" {% if user.preferred_language == 'Kannada' %}selected{% endif %}>Kannada</option>
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Location Fields (Read only visually, updated via map) -->
+            <div class="form-group">
+                <label>State</label>
+                <input type="text" name="state" value="{{ user.state }}" required readonly style="background-color: #f5f5f5;">
+            </div>
+            <div class="form-group">
+                <label>District</label>
+                <input type="text" name="district" value="{{ user.district }}" required readonly style="background-color: #f5f5f5;">
+            </div>
+            
+            {% if user.role != 'advisor' %}
+            <div class="form-group">
+                <label>Specific Location (Village/City)</label>
+                <input type="text" name="location" value="{{ user.location }}" required readonly style="background-color: #f5f5f5;">
+            </div>
+            {% endif %}
+            
+            <div class="form-group" style="grid-column: 1 / -1; margin-top: 1rem;">
+                <label>📍 Update your location on the map</label>
+                <p style="font-size: 0.85rem; color: #666; margin-bottom: 0.5rem;">Click on the map to change your location pin. The address fields will auto-update.</p>
+                <div id="update-map" class="map-container" style="height: 300px; border-radius: 8px; border: 1px solid #ddd; z-index: 1;"></div>
+                <input type="hidden" name="lat" id="lat-input" value="{{ user.lat if user.lat else '' }}">
+                <input type="hidden" name="lng" id="lng-input" value="{{ user.lng if user.lng else '' }}">
+            </div>
+            
+            {% if user.role == 'advisor' %}
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label>Profile Description</label>
+                <textarea name="profile_description" rows="4" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ccc;" required>{{ user.profile_description }}</textarea>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+            <a href="{{ url_for('main.dashboard', tab='profile') }}" class="btn btn-outline" style="flex: 1; text-align: center;">Cancel</a>
+            <button type="submit" class="btn btn-primary" style="flex: 2;">Save Changes</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const savedLat = document.getElementById('lat-input').value;
+    const savedLng = document.getElementById('lng-input').value;
+    
+    let initialLat = 20.5937;
+    let initialLng = 78.9629;
+    let initialZoom = 5;
+    
+    if (savedLat && savedLng) {
+        initialLat = parseFloat(savedLat);
+        initialLng = parseFloat(savedLng);
+        initialZoom = 12;
+    }
+
+    const map = L.map('update-map').setView([initialLat, initialLng], initialZoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    let marker;
+    
+    if (savedLat && savedLng) {
+        marker = L.marker([initialLat, initialLng]).addTo(map);
+    } else if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+            map.setView([pos.coords.latitude, pos.coords.longitude], 10);
+        });
+    }
+
+    map.on('click', async function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+
+        if (marker) {
+            marker.setLatLng(e.latlng);
+        } else {
+            marker = L.marker(e.latlng).addTo(map);
+        }
+
+        document.getElementById('lat-input').value = lat;
+        document.getElementById('lng-input').value = lng;
+
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+            const data = await response.json();
+            
+            if (data && data.address) {
+                const address = data.address;
+                
+                const stateInput = document.querySelector('input[name="state"]');
+                if (stateInput && address.state) stateInput.value = address.state;
+                
+                const districtInput = document.querySelector('input[name="district"]');
+                const district = address.state_district || address.county || address.district;
+                if (districtInput && district) districtInput.value = district.replace(/ District$/i, '');
+                
+                const locInput = document.querySelector('input[name="location"]');
+                if (locInput) {
+                    const loc = address.village || address.city || address.town || address.suburb;
+                    if (loc) locInput.value = loc;
+                }
+            }
+        } catch (error) {
+            console.error("Error reverse geocoding:", error);
+        }
+    });
+
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (!document.getElementById('lat-input').value) {
+            e.preventDefault();
+            alert("Please click on the map to set your precise location.");
+        }
+    });
+</script>
+{% endblock %}

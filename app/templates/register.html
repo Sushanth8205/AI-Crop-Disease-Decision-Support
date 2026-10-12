@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-container glass-panel" style="text-align: center;">
+    <h2>Join CropCare AI</h2>
+    <p style="margin-bottom: 2rem;">Select your role to continue registration.</p>
+    
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ url_for('auth.register_user') }}" class="btn btn-outline" style="flex: 1; min-width: 200px; padding: 2rem;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🌾</div>
+            <h3>I am a Farmer</h3>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem; font-weight: normal; color: #555;">Get AI disease detection and expert advice.</p>
+        </a>
+        
+        <a href="{{ url_for('auth.register_advisor') }}" class="btn btn-outline" style="flex: 1; min-width: 200px; padding: 2rem;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">👨‍🎓</div>
+            <h3>I am an Advisor</h3>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem; font-weight: normal; color: #555;">Provide expert guidance and consult farmers.</p>
+        </a>
+    </div>
+    
+    <p class="auth-links" style="margin-top: 2rem;">Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a></p>
+</div>
+{% endblock %}

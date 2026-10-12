@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Based Crop Disease Detection</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+
+    {% if session.get('user_id') %}
+    <!-- ── AUTHENTICATED APP SHELL ── -->
+    <div class="app-shell">
+
+        <!-- Desktop Sidebar -->
+        <aside class="sidebar">
+
+            <a href="{{ url_for('main.index') }}" class="sidebar-logo">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo"
+                    style="height: 32px; width: auto; object-fit: contain;">
+                <span>ML Based Crop Disease Detection</span>
+            </a>
+
+            <div class="sidebar-user">
+                <div class="user-name">{{ session.get('name', 'User') }}</div>
+                <div class="user-role">{{ session.get('role', 'user')|capitalize }}</div>
+            </div>
+
+            <nav class="sidebar-nav">
+                {% if session.get('role') == 'user' %}
+                <a href="{{ url_for('main.dashboard') }}?tab=home"
+                    class="nav-item {% if active_tab == 'home' %}active{% endif %}">
+                    <span class="icon">🏠</span> Home
+                </a>
+                <a href="{{ url_for('detection.detect') }}" class="nav-item">
+                    <span class="icon">🔬</span> Detect Disease
+                </a>
+                <a href="{{ url_for('main.dashboard') }}?tab=history"
+                    class="nav-item {% if active_tab == 'history' %}active{% endif %}">
+                    <span class="icon">📋</span> History
+                </a>
+                <a href="{{ url_for('advisor.list_advisors') }}" class="nav-item">
+                    <span class="icon">👨‍🌾</span> Advisors
+                </a>
+                <a href="{{ url_for('main.dashboard') }}?tab=profile"
+                    class="nav-item {% if active_tab == 'profile' %}active{% endif %}">
+                    <span class="icon">👤</span> Profile
+                </a>
+                {% else %}
+                <a href="{{ url_for('main.dashboard') }}?tab=home"
+                    class="nav-item {% if active_tab == 'home' %}active{% endif %}">
+                    <span class="icon">🏠</span> Dashboard
+                </a>
+                <a href="{{ url_for('main.dashboard') }}?tab=appointments"
+                    class="nav-item {% if active_tab == 'appointments' %}active{% endif %}">
+                    <span class="icon">📅</span> Appointments
+                </a>
+                <a href="{{ url_for('main.dashboard') }}?tab=profile"
+                    class="nav-item {% if active_tab == 'profile' %}active{% endif %}">
+                    <span class="icon">👤</span> Profile
+                </a>
+                {% endif %}
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('auth.logout') }}"
+                    style="text-decoration:none;display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem;border-radius:10px;color:#666;font-weight:500;">
+                    <span>🚪</span> Logout
+                </a>
+            </div>
+        </aside>
+
+        <!-- Right side content column -->
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;">
+
+            <header class="mobile-header">
+                <div style="display: flex; align-items: center;">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo"
+                        style="height: 28px; width: auto; margin-right: 8px;">
+                    <span class="logo">ML Based Crop Disease Detection</span>
+                </div>
+                <span style="color:#555;font-size:0.9rem;">{{ session.get('name', '') }}</span>
+            </header>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                        <div class="flash-popup alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Page Content (single block definition) -->
+            <main class="app-main">
+                {% block content %}{% endblock %}
+            </main>
+
+            <!-- Mobile Bottom Nav -->
+            <nav class="mobile-bottom-nav">
+                {% if session.get('role') == 'user' %}
+                <a href="{{ url_for('main.dashboard') }}?tab=home"
+                    class="nav-item {% if active_tab == 'home' %}active{% endif %}">
+                    <span class="icon">🏠</span><span>Home</span>
+                </a>
+                <a href="{{ url_for('detection.detect') }}" class="nav-item">
+                    <span class="icon">🔬</span><span>Detect</span>
+                </a>
+                <a href="{{ url_for('main.dashboard') }}?tab=history"
+                    class="nav-item {% if active_tab == 'history' %}active{% endif %}">
+                    <span class="icon">📋</span><span>History</span>
+                </a>
+                <a href="{{ url_for('advisor.list_advisors') }}" class="nav-item">
+                    <span class="icon">👨‍🌾</span><span>Advisors</span>
+                </a>
+                <a href="{{ url_for('main.dashboard') }}?tab=profile"
+                    class="nav-item {% if active_tab == 'profile' %}active{% endif %}">
+                    <span class="icon">👤</span><span>Profile</span>
+                </a>
+                {% else %}
+                <a href="{{ url_for('main.dashboard') }}?tab=home"
+                    class="nav-item {% if active_tab == 'home' %}active{% endif %}">
+                    <span class="icon">🏠</span><span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('main.dashboard') }}?tab=appointments"
+                    class="nav-item {% if active_tab == 'appointments' %}active{% endif %}">
+                    <span class="icon">📅</span><span>Schedule</span>
+                </a>
+                <a href="{{ url_for('main.dashboard') }}?tab=profile"
+                    class="nav-item {% if active_tab == 'profile' %}active{% endif %}">
+                    <span class="icon">👤</span><span>Profile</span>
+                </a>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- ── PUBLIC PAGES ── -->
+    <nav class="navbar">
+        <div class="logo">
+            <a href="{{ url_for('main.index') }}" style="display: flex; align-items: center;">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo"
+                    style="height: 36px; width: auto; margin-right: 10px;">
+                ML Based Crop Disease Detection
+            </a>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('auth.login') }}">Login</a>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Sign Up</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-container">
+            {% for category, message in messages %}
+            <div class="flash-popup alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        {# Public pages render the same content block — child template fills it #}
+        {{ self.content() }}
+    </div>
+    {% endif %}
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    {% block scripts %}{% endblock %}
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const popups = document.querySelectorAll(".flash-popup");
+
+    popups.forEach(function (popup) {
+
+        setTimeout(function () {
+            popup.style.opacity = "0";
+            popup.style.transform = "translateY(-20px)";
+
+            setTimeout(function () {
+                popup.remove();
+            }, 400);
+
+        }, 3000);
+
+    });
+
+});
+</script>
+</body>
+
+</html>
