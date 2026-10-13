@@ -86,7 +86,7 @@ def load_ensemble_models():
     
     candidates = [
         ("EfficientNet-B0", "best_model.pth"),
-        ("MobileNetV2", "mobilenetv2_plant.pth"),
+        # ("MobileNetV2", "mobilenetv2_plant.pth"),
     ]
 
     loaded = []
