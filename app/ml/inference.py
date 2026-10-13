@@ -151,7 +151,7 @@ def predict_disease(image_path):
         confidence = round(random.uniform(75.0, 99.9), 2)
     else:
         img_tensor = transform(pil_img).unsqueeze(0).to(device)
-        with torch.no_grad():
+        with torch.inference_mode():
             prob_list = []
             for name, m in ensemble_models:
                 outputs = m(img_tensor)
