@@ -106,6 +106,8 @@ def load_ensemble_models():
     else:
         print("Warning: No pre-trained models found. Inference will use mock fallback.")
 
+    print(f"Loaded models: {[name for name, _ in loaded]}")
+    print(f"Inference device: {device}")
     return loaded, device
 
 
