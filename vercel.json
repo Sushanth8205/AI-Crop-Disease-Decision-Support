@@ -1,5 +1,5 @@
 
+
 {
-  "buildCommand": "echo 'Preparing Flask application'",
   "framework": null
 }
