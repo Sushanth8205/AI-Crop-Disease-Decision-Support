@@ -60,8 +60,6 @@ def detect():
             file.save(filepath)
 
             # Import the prediction module only when detection is requested.
-            from app.ml.inference import predict_disease
-
             crop, disease, confidence, error_msg = predict_disease(filepath)
 
             if error_msg:
