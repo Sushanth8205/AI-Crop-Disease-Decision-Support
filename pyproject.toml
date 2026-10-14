@@ -1,4 +1,5 @@
-
+[tool.vercel]
+entrypoint = "run:app"
 [project]
 name = "ai-crop-disease-decision-support"
 version = "0.1.0"
