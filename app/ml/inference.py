@@ -85,8 +85,8 @@ def load_ensemble_models():
     num_classes = len(CLASS_NAMES)
     
     candidates = [
-        ("EfficientNet-B0", "best_model.pth"),
-        # ("MobileNetV2", "mobilenetv2_plant.pth"),
+        # ("EfficientNet-B0", "best_model.pth"),
+        ("MobileNetV2", "mobilenetv2_plant.pth"),
     ]
 
     loaded = []
