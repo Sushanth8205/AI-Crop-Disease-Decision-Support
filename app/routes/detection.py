@@ -49,33 +49,62 @@ def detect():
             flash("No selected image", "error")
             return redirect(request.url)
 
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            unique_filename = f"{int(time.time())}_{filename}"
+        if not allowed_file(file.filename):
+            flash("Please upload a PNG, JPG, or JPEG image.", "error")
+            return redirect(url_for("detection.detect"))
 
-            filepath = os.path.join(
-                current_app.config["UPLOAD_FOLDER"],
-                unique_filename,
-            )
+        filename = secure_filename(file.filename)
+        unique_filename = f"{int(time.time())}_{filename}"
+
+        upload_folder = current_app.config["UPLOAD_FOLDER"]
+        os.makedirs(upload_folder, exist_ok=True)
+
+        filepath = os.path.join(upload_folder, unique_filename)
+
+        try:
             file.save(filepath)
+        except Exception:
+            current_app.logger.exception("Failed to save uploaded image")
+            flash("Could not save the uploaded image.", "error")
+            return redirect(url_for("detection.detect"))
 
-            # Import the prediction module only when detection is requested.
+        # Import and run prediction only when an image is submitted.
+        try:
+            current_app.logger.info("Starting crop disease prediction")
+
+            from app.ml.inference import predict_disease
+
+            current_app.logger.info("Prediction module imported")
+
             crop, disease, confidence, error_msg = predict_disease(filepath)
 
-            if error_msg:
-                try:
-                    if os.path.exists(filepath):
-                        os.remove(filepath)
-                except OSError:
-                    current_app.logger.exception(
-                        "Could not remove invalid uploaded image"
-                    )
+            current_app.logger.info("Prediction function completed")
 
-                flash(f"⚠️ {error_msg}", "error")
-                return redirect(url_for("detection.detect"))
+        except Exception:
+            current_app.logger.exception("Crop disease prediction failed")
 
-            relative_path = f"uploads/{unique_filename}"
+            flash(
+                "Prediction failed due to a server error. "
+                "Please check the server logs.",
+                "error",
+            )
+            return redirect(url_for("detection.detect"))
 
+        if error_msg:
+            try:
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+            except OSError:
+                current_app.logger.exception(
+                    "Could not remove invalid uploaded image"
+                )
+
+            flash(f"⚠️ {error_msg}", "error")
+            return redirect(url_for("detection.detect"))
+
+        relative_path = f"uploads/{unique_filename}"
+
+        try:
             detection_id = Detection.save_detection(
                 session["user_id"],
                 crop,
@@ -83,10 +112,17 @@ def detect():
                 confidence,
                 relative_path,
             )
-
-            return redirect(
-                url_for("detection.result", detection_id=detection_id)
+        except Exception:
+            current_app.logger.exception("Failed to save detection record")
+            flash(
+                "The prediction completed, but the result could not be saved.",
+                "error",
             )
+            return redirect(url_for("detection.detect"))
+
+        return redirect(
+            url_for("detection.result", detection_id=detection_id)
+        )
 
     return render_template("detection.html")
 
@@ -100,7 +136,7 @@ def result(detection_id):
 
     if (
         not detection_record
-        or str(detection_record.get("user_id")) != session["user_id"]
+        or str(detection_record.get("user_id")) != str(session["user_id"])
     ):
         flash("Result not found or unauthorized access.", "error")
         return redirect(url_for("main.dashboard"))
@@ -147,12 +183,11 @@ def download_plot(detection_id, plot_type="diagnostic"):
 
     if (
         not detection_record
-        or str(detection_record.get("user_id")) != session["user_id"]
+        or str(detection_record.get("user_id")) != str(session["user_id"])
     ):
         flash("Unauthorized access.", "error")
         return redirect(url_for("main.dashboard"))
 
-    # Import plotting code only when a plot download is requested.
     from app.ml.analisis import get_plot_bytes
 
     img_full_path = os.path.join(
@@ -202,12 +237,11 @@ def download_csv(detection_id):
 
     if (
         not detection_record
-        or str(detection_record.get("user_id")) != session["user_id"]
+        or str(detection_record.get("user_id")) != str(session["user_id"])
     ):
         flash("Unauthorized access.", "error")
         return redirect(url_for("main.dashboard"))
 
-    # Import feature extraction only when a CSV is requested.
     from app.ml.analisis import extract_features
 
     img_full_path = os.path.join(
