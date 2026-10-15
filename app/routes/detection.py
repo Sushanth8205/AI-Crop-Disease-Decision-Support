@@ -32,6 +32,7 @@ def allowed_file(filename):
     )
 
 
+
 @detection_bp.route("/detect", methods=["GET", "POST"])
 def detect():
     if "user_id" not in session:
@@ -61,31 +62,55 @@ def detect():
 
         filepath = os.path.join(upload_folder, unique_filename)
 
+        # Save uploaded image
         try:
             file.save(filepath)
+            current_app.logger.info("Uploaded image saved successfully")
+
         except Exception:
             current_app.logger.exception("Failed to save uploaded image")
             flash("Could not save the uploaded image.", "error")
             return redirect(url_for("detection.detect"))
 
-        # Import and run prediction only when an image is submitted.
-       
-try:
-    current_app.logger.info("Starting crop disease prediction")
-    from app.ml.inference import predict_disease
+        # Run crop disease prediction
+        try:
+            current_app.logger.info("Starting crop disease prediction")
 
-    current_app.logger.info("Loading model / running prediction")
-    crop, disease, confidence, error_msg = predict_disease(filepath)
+            from app.ml.inference import predict_disease
 
-    current_app.logger.info("Crop disease prediction completed")
+            current_app.logger.info(
+                "Loading model / running prediction"
+            )
 
-except Exception:
-    current_app.logger.exception("Crop disease prediction failed")
-    flash("Prediction failed. Please check server logs.", "error")
-    return redirect(url_for("detection.detect"))
+            crop, disease, confidence, error_msg = predict_disease(
+                filepath
+            )
 
-        
+            current_app.logger.info(
+                "Crop disease prediction completed"
+            )
 
+        except Exception:
+            current_app.logger.exception(
+                "Crop disease prediction failed"
+            )
+            flash(
+                "Prediction failed. Please check server logs.",
+                "error",
+            )
+
+            # Clean up uploaded image
+            try:
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+            except OSError:
+                current_app.logger.exception(
+                    "Could not remove uploaded image"
+                )
+
+            return redirect(url_for("detection.detect"))
+
+        # Handle prediction validation errors
         if error_msg:
             try:
                 if os.path.exists(filepath):
@@ -98,6 +123,7 @@ except Exception:
             flash(f"⚠️ {error_msg}", "error")
             return redirect(url_for("detection.detect"))
 
+        # Save prediction to database
         relative_path = f"uploads/{unique_filename}"
 
         try:
@@ -108,16 +134,24 @@ except Exception:
                 confidence,
                 relative_path,
             )
+
         except Exception:
-            current_app.logger.exception("Failed to save detection record")
+            current_app.logger.exception(
+                "Failed to save detection record"
+            )
             flash(
-                "The prediction completed, but the result could not be saved.",
+                "The prediction completed, but the result "
+                "could not be saved.",
                 "error",
             )
             return redirect(url_for("detection.detect"))
 
+        # Show prediction result
         return redirect(
-            url_for("detection.result", detection_id=detection_id)
+            url_for(
+                "detection.result",
+                detection_id=detection_id,
+            )
         )
 
     return render_template("detection.html")
