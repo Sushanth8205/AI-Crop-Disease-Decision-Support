@@ -9,7 +9,12 @@ from PIL import Image
 
 from app.ml.cnn_model import CropDiseaseModel
 from app.ml.image_utils import extract_leaf_roi, validate_crop_leaf
+torch.set_num_threads(1)
 
+try:
+    torch.set_num_interop_threads(1)
+except RuntimeError:
+    pass
 
 # Mapping of class index to disease name.
 # Keep this order exactly aligned with your model's training labels.
