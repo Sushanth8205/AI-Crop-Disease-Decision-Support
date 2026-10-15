@@ -69,26 +69,22 @@ def detect():
             return redirect(url_for("detection.detect"))
 
         # Import and run prediction only when an image is submitted.
-        try:
-            current_app.logger.info("Starting crop disease prediction")
+       
+try:
+    current_app.logger.info("Starting crop disease prediction")
+    from app.ml.inference import predict_disease
 
-            from app.ml.inference import predict_disease
+    current_app.logger.info("Loading model / running prediction")
+    crop, disease, confidence, error_msg = predict_disease(filepath)
 
-            current_app.logger.info("Prediction module imported")
+    current_app.logger.info("Crop disease prediction completed")
 
-            crop, disease, confidence, error_msg = predict_disease(filepath)
+except Exception:
+    current_app.logger.exception("Crop disease prediction failed")
+    flash("Prediction failed. Please check server logs.", "error")
+    return redirect(url_for("detection.detect"))
 
-            current_app.logger.info("Prediction function completed")
-
-        except Exception:
-            current_app.logger.exception("Crop disease prediction failed")
-
-            flash(
-                "Prediction failed due to a server error. "
-                "Please check the server logs.",
-                "error",
-            )
-            return redirect(url_for("detection.detect"))
+        
 
         if error_msg:
             try:
