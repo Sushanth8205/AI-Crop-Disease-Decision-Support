@@ -22,6 +22,6 @@ numpy>=1.24
 # pandas>=2.0
 # matplotlib>=3.8
 # seaborn>=0.13
-# reportlab>=4.0
+reportlab>=4.0
 # google-genai>=0.1
 # requests>=2.31
