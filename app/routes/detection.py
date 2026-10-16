@@ -35,6 +35,9 @@ def allowed_file(filename):
 
 @detection_bp.route("/detect", methods=["GET", "POST"])
 def detect():
+    current_app.logger.info("DETECT ROUTE ENTERED")
+    if request.method == "POST":
+    current_app.logger.info("DETECT POST RECEIVED")
     if "user_id" not in session:
         flash("Please login to detect crop diseases.", "error")
         return redirect(url_for("auth.login"))
